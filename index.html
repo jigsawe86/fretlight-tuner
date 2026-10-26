@@ -1,0 +1,261 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0d12"><title>Fretlight — Guitar Tuner</title>
+<style>
+:root{--bg:#0b0d12;--card:#141824;--line:#232a3a;--txt:#eef1f8;--mut:#8a93a8;--acc:#7c8cff;--ok:#2ee59d;--warn:#ffb547;--bad:#ff5d73}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:radial-gradient(120% 70% at 50% 0%,#1a2033 0%,var(--bg) 60%);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Inter","Segoe UI",Roboto,sans-serif}
+.app{max-width:460px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 18px 0}
+header{display:flex;align-items:center;justify-content:space-between;padding:16px 0 6px}
+.brand{display:flex;gap:10px;align-items:center;font-weight:700;letter-spacing:.2px;font-size:19px}
+.logo{width:30px;height:30px}
+.iconbtn{width:40px;height:40px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--txt);display:grid;place-items:center;cursor:pointer;transition:transform .15s}
+.iconbtn:active{transform:scale(.92)}
+.sub{display:flex;gap:8px;align-items:center;justify-content:center;margin:6px 0 2px;flex-wrap:wrap}
+.chip{font-size:12.5px;color:var(--mut);background:#ffffff08;border:1px solid var(--line);padding:6px 11px;border-radius:999px;cursor:pointer}
+.seg{display:flex;background:#ffffff08;border:1px solid var(--line);border-radius:999px;padding:3px}
+.seg button{border:0;background:none;color:var(--mut);font-weight:600;font-size:12.5px;font-family:inherit;padding:6px 14px;border-radius:999px;cursor:pointer;transition:.25s}
+.seg button.on{background:var(--acc);color:#fff;box-shadow:0 4px 16px #7c8cff55}
+.gaugewrap{position:relative;margin-top:8px}
+svg.gauge{width:100%;display:block;overflow:visible}
+.readout{margin-top:-6px;text-align:center;pointer-events:none}
+.note{font-size:84px;font-weight:800;line-height:1;letter-spacing:-2px;transition:color .3s,text-shadow .3s}
+.note sub{font-size:26px;font-weight:600;color:var(--mut);letter-spacing:0;margin-left:2px}
+.meta{margin-top:6px;color:var(--mut);font-size:14px;font-variant-numeric:tabular-nums}
+.status{height:22px;text-align:center;font-weight:600;font-size:14px;letter-spacing:.4px;margin-top:4px;transition:color .3s}
+.in .note{color:var(--ok);text-shadow:0 0 28px #2ee59d88}
+.strings{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:16px 0 10px}
+.str{position:relative;aspect-ratio:1/1.15;border-radius:16px;border:1px solid var(--line);background:linear-gradient(180deg,#1a1f2e,#121622);color:var(--txt);font-weight:700;font-size:18px;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:transform .2s,border-color .25s,box-shadow .25s,background .25s}
+.str small{font-size:10px;color:var(--mut);font-weight:500}
+.str:active{transform:scale(.94)}
+.str.sel{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc),0 6px 20px #7c8cff40}
+.str.hit{background:linear-gradient(180deg,#203a33,#122420);border-color:var(--ok);box-shadow:0 0 18px #2ee59d55}
+.str.play::after{content:"";position:absolute;inset:-4px;border-radius:19px;border:2px solid var(--acc);animation:ring 1s ease-out infinite}
+@keyframes ring{from{opacity:.9;transform:scale(.95)}to{opacity:0;transform:scale(1.12)}}
+.hint{text-align:center;color:var(--mut);font-size:12px;min-height:16px}
+.start{margin:14px auto 8px;width:100%;padding:16px;border-radius:18px;border:0;font-weight:700;font-size:16px;font-family:inherit;color:#fff;cursor:pointer;background:linear-gradient(135deg,#7c8cff,#a86bff);box-shadow:0 10px 30px #7c8cff44;transition:transform .15s,filter .2s}
+.start:active{transform:scale(.98)}.start.on{background:linear-gradient(135deg,#2a3145,#1e2433);box-shadow:none;color:var(--mut)}
+.spacer{flex:1}
+.ad{margin:10px -18px 0;padding:10px 18px calc(10px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:#0e1119;display:flex;align-items:center;gap:10px}
+.adbox{flex:1;height:50px;border:1px dashed #3a4256;border-radius:10px;display:grid;place-items:center;color:#5c6680;font-size:12px}
+.rm{border:1px solid var(--line);background:var(--card);color:var(--txt);border-radius:12px;padding:9px 11px;font-weight:600;font-size:12px;font-family:inherit;cursor:pointer;line-height:1.2}
+.sheet-bg{position:fixed;inset:0;background:#0008;opacity:0;pointer-events:none;transition:.3s;backdrop-filter:blur(4px)}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:460px;margin:0 auto;background:#131723;border:1px solid var(--line);border-radius:24px 24px 0 0;padding:10px 20px calc(24px + env(safe-area-inset-bottom));transform:translateY(105%);transition:transform .35s cubic-bezier(.2,.9,.3,1)}
+.open .sheet{transform:none}.open .sheet-bg{opacity:1;pointer-events:auto}
+.grab{width:40px;height:5px;border-radius:3px;background:#3a4256;margin:0 auto 14px}
+.row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--line);gap:12px}
+.row:last-child{border:0}.row label{font-weight:600;font-size:15px}.row .d{color:var(--mut);font-size:12px;font-weight:400;display:block;margin-top:2px}
+select{background:var(--card);color:var(--txt);border:1px solid var(--line);border-radius:12px;padding:10px;font-weight:600;font-size:14px;font-family:inherit}
+.step{display:flex;align-items:center;gap:6px}.step button{width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--txt);font-size:18px;cursor:pointer}
+.step span{min-width:64px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
+.toast{position:fixed;left:50%;bottom:110px;transform:translate(-50%,20px);background:#222a3c;padding:10px 16px;border-radius:12px;font-size:13px;opacity:0;transition:.3s;pointer-events:none}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.tunebar{display:flex;justify-content:center;margin-top:14px}
+.pill{position:relative}.pill select{appearance:none;-webkit-appearance:none;border-radius:999px;padding:10px 40px 10px 18px;background:linear-gradient(180deg,#1c2232,#141824);border:1px solid #2c3448;box-shadow:0 4px 18px #0006;transition:border-color .2s}
+.pill select:focus{outline:none;border-color:var(--acc)}.pill:after{content:"";position:absolute;right:17px;top:50%;width:7px;height:7px;border-right:2px solid var(--mut);border-bottom:2px solid var(--mut);transform:translateY(-70%) rotate(45deg);pointer-events:none}
+.pill .lbl{color:var(--mut);font-weight:500}
+.tunebar{gap:8px;align-items:center;flex-wrap:wrap}
+.tb{border:1px solid #2c3448;background:#141824;color:var(--txt);border-radius:999px;padding:9px 14px;font-weight:600;font-size:13px;font-family:inherit;cursor:pointer;transition:.2s;display:inline-flex;align-items:center;gap:6px}
+.tb:active{transform:scale(.95)}.tb.on{background:var(--acc);border-color:var(--acc);color:#fff;box-shadow:0 4px 16px #7c8cff55}
+.tb.save{background:linear-gradient(135deg,#2ee59d,#22b8a0);border:0;color:#06281c;animation:pop .3s}.tb.del{color:var(--bad)}
+.tb.ic{padding:9px 11px}
+@keyframes pop{from{transform:scale(.7);opacity:0}}
+.editing .str{aspect-ratio:auto;padding:4px 0;cursor:default;border-style:dashed;border-color:#3a4a7a}
+.ar{display:none;width:100%;border:0;background:none;color:var(--acc);font-size:13px;padding:5px 0;cursor:pointer;line-height:1}
+.ar:active{color:#fff}.editing .ar{display:block}
+.str.bump .ch{display:inline-block;animation:bump .25s}@keyframes bump{50%{transform:scale(1.3);color:var(--acc)}}
+.capo{text-align:center;font-size:12.5px;color:var(--warn);min-height:0;margin-top:8px}
+.modal-bg{position:fixed;inset:0;background:#0009;backdrop-filter:blur(6px);display:none;align-items:flex-start;justify-content:center;padding:70px 18px 18px;z-index:9}
+.modal-bg.center{align-items:center}.modal-bg.show{display:flex}
+.modal{width:100%;max-width:400px;background:#151a27;border:1px solid var(--line);border-radius:22px;padding:20px;animation:pop .25s}
+.modal h3{margin:0 0 6px;font-size:18px}.modal p{margin:0 0 14px;color:var(--mut);font-size:13.5px}
+.modal input{width:100%;background:#0e1119;border:1px solid var(--line);color:var(--txt);border-radius:12px;padding:12px;font-size:16px;font-family:inherit;outline:none}
+.modal input:focus{border-color:var(--acc)}.mbtns{display:flex;gap:10px;margin-top:16px;justify-content:flex-end}
+.mbtns button{border:0;border-radius:12px;padding:11px 16px;font-weight:700;font-size:14px;font-family:inherit;cursor:pointer;background:#232a3a;color:var(--txt)}
+.mbtns .pri{background:var(--acc);color:#fff}.mbtns .danger{background:var(--bad);color:#fff}
+.merr{color:var(--warn);font-size:12.5px;margin-top:8px;min-height:16px}
+.res{max-height:52vh;overflow:auto;margin:10px -6px 0}
+.ri{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 10px;border-radius:12px;cursor:pointer}
+.ri:hover,.ri:active{background:#1e2435}.ri b{display:block;font-size:14.5px}.ri span{color:var(--mut);font-size:12.5px}
+.ri .tg{font-size:11.5px;color:var(--acc);background:#7c8cff1a;border-radius:999px;padding:4px 9px;white-space:nowrap}
+.ri.web b{color:var(--acc)}
+.tb[hidden]{display:none}a.ri{text-decoration:none;color:inherit}svg.gauge{max-width:310px;margin:0 auto}.tb.save{animation:none}
+svg.gauge{max-width:270px}.note{font-size:68px}.gaugewrap{margin-top:0}header{padding:10px 0 4px}.strings{margin:10px 0 6px}.start{margin:10px auto 6px;padding:14px}.capo:empty{display:none}.tunebar{margin-top:8px}
+</style></head><body>
+<div class="app" id="app">
+<header><div class="brand"><svg class="logo" viewBox="0 0 32 32"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7c8cff"/><stop offset="1" stop-color="#2ee59d"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="#151a28"/><path d="M7 21a9 9 0 0 1 18 0" fill="none" stroke="url(#lg)" stroke-width="2.6" stroke-linecap="round"/><path d="M16 22 20 12" stroke="#eef1f8" stroke-width="2.2" stroke-linecap="round"/><circle cx="16" cy="22" r="2.4" fill="#eef1f8"/></svg>Fretlight</div>
+<button class="iconbtn" id="gear" aria-label="Settings"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></button></header>
+<div class="sub"><div class="seg" id="mode"><button data-m="auto" class="on">Auto</button><button data-m="manual">Manual</button><button data-m="chrom">Chromatic</button></div><span class="chip" id="tchip">Standard · 440 Hz</span></div>
+<div class="gaugewrap" id="gw">
+<svg class="gauge" viewBox="0 0 320 210">
+<defs><linearGradient id="arc" x1="0" x2="1"><stop offset="0" stop-color="#ff5d73"/><stop offset=".3" stop-color="#ffb547"/><stop offset=".5" stop-color="#2ee59d"/><stop offset=".7" stop-color="#ffb547"/><stop offset="1" stop-color="#ff5d73"/></linearGradient>
+<filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6"/></filter>
+<radialGradient id="halo"><stop offset="0" stop-color="#2ee59d" stop-opacity=".35"/><stop offset="1" stop-color="#2ee59d" stop-opacity="0"/></radialGradient></defs>
+<circle id="halo" cx="160" cy="170" r="150" fill="url(#halo)" opacity="0" style="transition:opacity .4s"/>
+<path d="M30 170A130 130 0 0 1 290 170" fill="none" stroke="#1d2333" stroke-width="16" stroke-linecap="round"/>
+<path d="M30 170A130 130 0 0 1 290 170" fill="none" stroke="url(#arc)" stroke-width="4" stroke-linecap="round" opacity=".85"/>
+<g id="ticks"></g>
+<g id="needle" style="transform-origin:160px 170px"><line x1="160" y1="170" x2="160" y2="52" stroke="#eef1f8" stroke-width="3" stroke-linecap="round"/><line id="nglow" x1="160" y1="170" x2="160" y2="52" stroke="#2ee59d" stroke-width="7" stroke-linecap="round" filter="url(#glow)" opacity="0"/></g>
+<circle cx="160" cy="170" r="8" fill="#eef1f8"/><circle cx="160" cy="170" r="3" fill="#0b0d12"/>
+<text x="34" y="200" fill="#5c6680" font-size="11" text-anchor="middle">−50</text><text x="286" y="200" fill="#5c6680" font-size="11" text-anchor="middle">+50</text>
+</svg>
+<div class="readout"><div class="note" id="note">–</div></div></div>
+<div class="meta" style="text-align:center" id="meta">Tap Start and play a string</div>
+<div class="status" id="status"></div>
+<div class="tunebar"><div class="pill"><select id="tun2" aria-label="Tuning preset"></select></div><button class="tb ic" id="find" aria-label="Find a song's tuning"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button><button class="tb" id="edit">Edit</button><button class="tb save" id="save" hidden>Save</button><button class="tb" id="ren" hidden>Rename</button><button class="tb del" id="del" hidden>Delete</button></div><div class="capo" id="capo"></div>
+<div class="strings" id="strings" style="margin-top:12px"></div>
+<div class="hint" id="hint">Long-press a string to hear its reference tone</div>
+<div class="spacer"></div>
+<button class="start" id="start">Start tuning</button>
+<div class="ad"><div class="adbox">Banner ad placeholder · 320×50</div><button class="rm" id="rm">Remove ads<br><span style="color:var(--mut);font-weight:500">placeholder</span></button></div>
+</div>
+<div id="sh"><div class="sheet-bg" id="shbg"></div><div class="sheet"><div class="grab"></div>
+<div class="row"><label>Tuning<span class="d">Preset for string targets</span></label><select id="tun"></select></div>
+<div class="row"><label>A4 calibration<span class="d">Concert pitch reference</span></label><div class="step"><button id="am">−</button><span id="av">440 Hz</span><button id="ap">+</button></div></div>
+<div class="row"><label>Reference tone<span class="d">Plays the selected string</span></label><button class="rm" id="ref">Play ▶</button></div>
+</div></div>
+<div class="toast" id="toast"></div>
+<div class="modal-bg center" id="mbg"><div class="modal"><h3 id="mt"></h3><p id="mp"></p><input id="mi" maxlength="24" autocomplete="off"><div class="merr" id="me"></div><div class="mbtns"><button id="mc">Cancel</button><button class="pri" id="mo">Save</button></div></div></div>
+<div class="modal-bg" id="sbg"><div class="modal"><input id="sq" placeholder="Search a song or artist…" autocomplete="off" enterkeyhint="search"><div class="res" id="sres"></div></div></div>
+
+<script>
+// ===== Pitch core (portable: no DOM). YIN detector + note math =====
+const NOTE_NAMES=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
+const STANDARD=[{n:'E',o:2,m:40},{n:'A',o:2,m:45},{n:'D',o:3,m:50},{n:'G',o:3,m:55},{n:'B',o:3,m:59},{n:'E',o:4,m:64}];
+function yin(buf,sr,thr=0.12,minF=60,maxF=1200){
+  const N=buf.length,W=Math.floor(N/2);let rms=0;for(let i=0;i<N;i++)rms+=buf[i]*buf[i];
+  rms=Math.sqrt(rms/N);if(rms<0.008)return null;
+  const tMin=Math.floor(sr/maxF),tMax=Math.min(W-1,Math.ceil(sr/minF));
+  const d=new Float32Array(tMax+2);
+  for(let t=1;t<=tMax+1;t++){let s=0;for(let i=0;i<W;i++){const x=buf[i]-buf[i+t];s+=x*x;}d[t]=s;}
+  let run=0;d[0]=1;for(let t=1;t<=tMax+1;t++){run+=d[t];d[t]=run?d[t]*t/run:1;}
+  let tau=-1;for(let t=tMin;t<=tMax;t++){if(d[t]<thr){while(t+1<=tMax&&d[t+1]<d[t])t++;tau=t;break;}}
+  if(tau<0)return null;
+  const a=d[tau-1],b=d[tau],c=d[tau+1],den=a+c-2*b;const tt=den?tau+(a-c)/(2*den):tau;
+  return {freq:sr/tt,clarity:1-b,rms};
+}
+function freqToNote(f,a4=440){const m=69+12*Math.log2(f/a4);const r=Math.round(m);
+  return {midi:r,name:NOTE_NAMES[((r%12)+12)%12],octave:Math.floor(r/12)-1,cents:(m-r)*100};}
+function midiToFreq(m,a4=440){return a4*Math.pow(2,(m-69)/12);}
+function nearestString(f,a4=440){const m=69+12*Math.log2(f/a4);let best=0;
+  STANDARD.forEach((s,i)=>{if(Math.abs(s.m-m)<Math.abs(STANDARD[best].m-m))best=i;});return best;}
+//if(typeof module!=='undefined')module.exports={yin,freqToNote,midiToFreq,nearestString,STANDARD};
+
+// ===== UI layer =====
+const TUNINGS={"Standard":[40,45,50,55,59,64],"Drop D":[38,45,50,55,59,64],"DADGAD":[38,45,50,55,57,62],"Open G":[38,43,50,55,59,62],"Open D":[38,45,50,54,57,62],"Half-step down":[39,44,49,54,58,63],"Full-step down":[38,43,48,53,57,62],"Double drop D":[38,45,50,55,59,62]};
+const NN=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
+const st={a4:440,tun:'Standard',mode:'auto',sel:0,run:false,cents:0,shown:0,lastHit:0};
+const $=id=>document.getElementById(id);
+// ticks
+(()=>{let g='';for(let c=-50;c<=50;c+=5){const a=c/50*80*Math.PI/180,L=c%25?8:16,r1=118,r2=r1-L;
+ g+=`<line x1="${160+r1*Math.sin(a)}" y1="${170-r1*Math.cos(a)}" x2="${160+r2*Math.sin(a)}" y2="${170-r2*Math.cos(a)}" stroke="${c?'#3a4256':'#2ee59d'}" stroke-width="${c%25?1.5:2.5}" stroke-linecap="round"/>`;}$('ticks').innerHTML=g;})();
+// ---- Tuning model (portable JSON): {name:string, notes:[6 MIDI ints, low→high]} ----
+const STORE_KEY='fretlight.tunings.v1';
+const Tunings={
+ load(){try{const a=JSON.parse(localStorage.getItem(STORE_KEY)||'[]');return Array.isArray(a)?a.filter(t=>t&&typeof t.name==='string'&&Array.isArray(t.notes)&&t.notes.length===6):[]}catch(e){return[]}},
+ saveAll(a){try{localStorage.setItem(STORE_KEY,JSON.stringify(a))}catch(e){}},
+ upsert(name,notes,oldName){const a=this.load().filter(t=>t.name!==name&&t.name!==oldName);a.push({name,notes:notes.slice()});a.sort((x,y)=>x.name.localeCompare(y.name));this.saveAll(a);},
+ remove(name){this.saveAll(this.load().filter(t=>t.name!==name))},
+ find(name){return this.load().find(t=>t.name===name)}
+};
+// ---- Song search (swap SongSearch.search for a server call later; same result shape) ----
+const SONG_DB={"version":1,"note":"Built-in sample. Tuning names map to presets; capo is fret number or 0.","songs":[["Stairway to Heaven","Led Zeppelin","Standard",0],["Whole Lotta Love","Led Zeppelin","Standard",0],["Black Dog","Led Zeppelin","Standard",0],["Ramble On","Led Zeppelin","Standard",0],["Kashmir","Led Zeppelin","DADGAD",0],["Black Mountain Side","Led Zeppelin","DADGAD",0],["Moby Dick","Led Zeppelin","Drop D",0],["Smoke on the Water","Deep Purple","Standard",0],["Back in Black","AC/DC","Standard",0],["Highway to Hell","AC/DC","Standard",0],["Thunderstruck","AC/DC","Standard",0],["Enter Sandman","Metallica","Standard",0],["Nothing Else Matters","Metallica","Standard",0],["Master of Puppets","Metallica","Standard",0],["One","Metallica","Standard",0],["Fade to Black","Metallica","Standard",0],["For Whom the Bell Tolls","Metallica","Standard",0],["Seek & Destroy","Metallica","Standard",0],["Wish You Were Here","Pink Floyd","Standard",0],["Comfortably Numb","Pink Floyd","Standard",0],["Paranoid","Black Sabbath","Standard",0],["Sunshine of Your Love","Cream","Standard",0],["Layla","Derek and the Dominos","Standard",0],["Cocaine","Eric Clapton","Standard",0],["Wonderful Tonight","Eric Clapton","Standard",0],["Tears in Heaven","Eric Clapton","Standard",0],["Free Bird","Lynyrd Skynyrd","Standard",0],["Sweet Home Alabama","Lynyrd Skynyrd","Standard",0],["Hotel California","Eagles","Standard",0],["Johnny B. Goode","Chuck Berry","Standard",0],["House of the Rising Sun","The Animals","Standard",0],["Knockin' on Heaven's Door","Bob Dylan","Standard",0],["(I Can't Get No) Satisfaction","The Rolling Stones","Standard",0],["Paint It Black","The Rolling Stones","Standard",0],["Start Me Up","The Rolling Stones","Open G",0],["Brown Sugar","The Rolling Stones","Open G",0],["Honky Tonk Women","The Rolling Stones","Open G",0],["Can't You Hear Me Knocking","The Rolling Stones","Open G",0],["Blackbird","The Beatles","Standard",0],["Here Comes the Sun","The Beatles","Standard",7],["Yesterday","The Beatles","Full-step down",0],["Dear Prudence","The Beatles","Drop D",0],["Wonderwall","Oasis","Standard",2],["Champagne Supernova","Oasis","Standard",0],["Creep","Radiohead","Standard",0],["Karma Police","Radiohead","Standard",0],["Zombie","The Cranberries","Standard",0],["Mr. Brightside","The Killers","Standard",0],["Everlong","Foo Fighters","Drop D",0],["Monkey Wrench","Foo Fighters","Drop D",0],["Killing in the Name","Rage Against the Machine","Drop D",0],["Schism","Tool","Drop D",0],["Sober","Tool","Drop D",0],["Harvest Moon","Neil Young","Drop D",0],["Cinnamon Girl","Neil Young","Double drop D",0],["Purple Haze","Jimi Hendrix","Half-step down",0],["Little Wing","Jimi Hendrix","Half-step down",0],["Voodoo Child (Slight Return)","Jimi Hendrix","Half-step down",0],["Hey Joe","Jimi Hendrix","Half-step down",0],["Pride and Joy","Stevie Ray Vaughan","Half-step down",0],["Texas Flood","Stevie Ray Vaughan","Half-step down",0],["Sweet Child O' Mine","Guns N' Roses","Half-step down",0],["Welcome to the Jungle","Guns N' Roses","Half-step down",0],["Paradise City","Guns N' Roses","Half-step down",0],["Panama","Van Halen","Half-step down",0],["Eruption","Van Halen","Half-step down",0],["Ain't Talkin' 'bout Love","Van Halen","Half-step down",0],["Under the Bridge","Red Hot Chili Peppers","Half-step down",0],["Man in the Box","Alice in Chains","Half-step down",0],["Basket Case","Green Day","Half-step down",0],["When I Come Around","Green Day","Half-step down",0],["Good Riddance (Time of Your Life)","Green Day","Standard",0],["Landslide","Fleetwood Mac","Standard",3],["Fast Car","Tracy Chapman","Standard",2],["Perfect","Ed Sheeran","Standard",1],["Free Fallin'","Tom Petty","Standard",0],["Brown Eyed Girl","Van Morrison","Standard",0],["Dust in the Wind","Kansas","Standard",0]]};
+const norm=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+function lev(a,b){const d=Array.from({length:b.length+1},(_,i)=>i);for(let i=1;i<=a.length;i++){let p=d[0];d[0]=i;for(let j=1;j<=b.length;j++){const t=d[j];d[j]=Math.min(d[j]+1,d[j-1]+1,p+(a[i-1]===b[j-1]?0:1));p=t;}}return d[b.length];}
+const SongSearch={search(q,limit=8){q=norm(q);if(q.length<2)return[];const qw=q.split(' ');
+ return SONG_DB.songs.map(([title,artist,tuning,capo])=>{const hay=norm(title+' '+artist),words=hay.split(' ');let s=0;
+  if(hay.includes(q))s+=10+(norm(title).startsWith(q)?5:0);
+  for(const w of qw){if(words.some(x=>x.startsWith(w)))s+=3;else{const best=Math.min(...words.map(x=>lev(w,x.slice(0,w.length+1))));if(w.length>3&&best<=1)s+=2;else if(w.length>5&&best<=2)s+=1;}}
+  return {title,artist,tuning,capo,notes:TUNINGS[tuning],score:s/qw.length};}).filter(r=>r.score>=2&&r.notes).sort((a,b)=>b.score-a.score).slice(0,limit);}};
+st.notes=TUNINGS.Standard.slice();st.custom=null;st.dirty=false;st.edit=false;st.capo=0;
+function nm(m){return NN[((m%12)+12)%12]}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function fillSelects(){const mine=Tunings.load();for(const sel of [$('tun'),$('tun2')]){
+ let o=st.dirty?'<option value="__u">Custom (unsaved)</option>':'';
+ o+='<optgroup label="Presets">'+Object.keys(TUNINGS).map(k=>`<option value="p:${esc(k)}">${esc(k)}</option>`).join('')+'</optgroup>';
+ if(mine.length)o+='<optgroup label="My tunings">'+mine.map(t=>`<option value="c:${esc(t.name)}">${esc(t.name)}</option>`).join('')+'</optgroup>';
+ sel.innerHTML=o;sel.value=st.dirty?'__u':(st.custom?'c:'+st.custom:'p:'+st.tun);}}
+function renderStrings(){const S=$('strings');S.classList.toggle('editing',st.edit);
+ S.innerHTML=st.notes.map((m,i)=>`<div class="str${st.mode==='manual'&&i===st.sel&&!st.edit?' sel':''}" data-i="${i}" role="button"><button class="ar" data-d="1" aria-label="Raise">▲</button><span class="ch">${nm(m)}</span><small>${6-i} · ${Math.floor(m/12)-1}</small><button class="ar" data-d="-1" aria-label="Lower">▼</button></div>`).join('');
+ $('tchip').textContent=`A4 = ${st.a4} Hz`;$('av').textContent=st.a4+' Hz';S.style.opacity=st.mode==='chrom'&&!st.edit?.45:1;
+ $('edit').textContent=st.edit?'Done':'Edit';$('edit').classList.toggle('on',st.edit);
+ $('save').hidden=!st.dirty;$('ren').hidden=$('del').hidden=!(st.edit&&st.custom&&!st.dirty);
+ $('capo').textContent=st.capo?`Capo on fret ${st.capo}`:'';
+ $('hint').textContent=st.edit?'Tap ▲ ▼ to move a string by one semitone':'Long-press a string to hear its reference tone';fillSelects();}
+function selectTuning(v){if(v==='__u')return;const k=v.slice(0,1),n=v.slice(2);
+ if(k==='p'){if(!TUNINGS[n])return;st.tun=n;st.custom=null;st.notes=TUNINGS[n].slice();}else{const t=Tunings.find(n);if(!t)return;st.custom=n;st.notes=t.notes.slice();}
+ st.dirty=false;st.capo=0;renderStrings();}
+function shift(i,d){const m=st.notes[i]+d;if(m<28||m>76)return;st.notes[i]=m;st.dirty=true;renderStrings();
+ document.querySelector(`.str[data-i="${i}"]`).classList.add('bump');}
+// ---- modal ----
+function modal({title,text,input,ok,danger},cb){$('mt').textContent=title;$('mp').textContent=text||'';$('mi').style.display=input!=null?'block':'none';$('mi').value=input||'';$('me').textContent='';
+ $('mo').textContent=ok||'OK';$('mo').className=danger?'danger':'pri';$('mbg').classList.add('show');if(input!=null)setTimeout(()=>$('mi').focus(),60);
+ const close=()=>$('mbg').classList.remove('show');$('mc').onclick=close;$('mbg').onclick=e=>{if(e.target===$('mbg'))close()};
+ const go=()=>{const r=cb($('mi').value.trim());if(r)$('me').textContent=r;else close();};$('mo').onclick=go;$('mi').onkeydown=e=>{if(e.key==='Enter')go();if(e.key==='Escape')close();};}
+let pendingOverwrite=null;
+function askName(initial,oldName){pendingOverwrite=null;modal({title:oldName?'Rename tuning':'Save tuning',text:st.notes.map(nm).join(' · '),input:initial,ok:'Save'},name=>{
+ if(!name)return 'Please enter a name';if(TUNINGS[name])return 'That name belongs to a preset';
+ if(Tunings.find(name)&&name!==oldName&&pendingOverwrite!==name){pendingOverwrite=name;$('mo').textContent='Overwrite';return `"${name}" already exists. Tap Overwrite to replace it.`;}
+ Tunings.upsert(name,st.notes,oldName);st.custom=name;st.dirty=false;renderStrings();toast(`Saved "${name}"`);});}
+$('edit').onclick=()=>{st.edit=!st.edit;renderStrings()};
+$('save').onclick=()=>askName(st.custom||'');
+$('ren').onclick=()=>askName(st.custom,st.custom);
+$('del').onclick=()=>modal({title:'Delete tuning?',text:`"${st.custom}" will be removed from My tunings.`,ok:'Delete',danger:true},()=>{const n=st.custom;Tunings.remove(n);selectTuning('p:Standard');toast(`Deleted "${n}"`);});
+// ---- song search UI ----
+function openSearch(){$('sbg').classList.add('show');$('sq').value='';renderResults();setTimeout(()=>$('sq').focus(),60);}
+function renderResults(){const q=$('sq').value.trim(),r=SongSearch.search(q);
+ let h=r.map((s,i)=>`<div class="ri" data-i="${i}"><div><b>${esc(s.title)}</b><span>${esc(s.artist)}${s.capo?' · capo '+s.capo:''}</span></div><span class="tg">${esc(s.tuning)}</span></div>`).join('');
+ if(q.length>=2)h+=`<a class="ri web" href="https://www.google.com/search?q=${encodeURIComponent(q+' guitar tuning')}" target="_blank" rel="noopener"><div><b>Search the web for “${esc(q)} guitar tuning”</b><span>${r.length?'Not the right one?':'No match in the built-in list'}</span></div><span class="tg">↗</span></a>`;
+ else h='<p style="margin:10px 4px 0">Try “Kashmir”, “Hendrix” or “Wonderwall”.</p>';
+ $('sres').innerHTML=h;$('sres')._r=r;}
+$('find').onclick=openSearch;$('sq').oninput=renderResults;
+$('sq').onkeydown=e=>{if(e.key==='Escape')$('sbg').classList.remove('show');if(e.key==='Enter'){const f=$('sres').querySelector('.ri');f&&f.click();}};
+$('sbg').onclick=e=>{if(e.target===$('sbg'))return $('sbg').classList.remove('show');const it=e.target.closest('.ri[data-i]');if(!it)return;
+ const s=$('sres')._r[+it.dataset.i];selectTuning('p:'+s.tuning);st.capo=s.capo;renderStrings();$('sbg').classList.remove('show');toast(`${s.title}: ${s.tuning}${s.capo?', capo '+s.capo:''}`);};
+renderStrings();
+// reference tone
+let ac,tone;
+function ensureAC(){ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();return ac;}
+function playRef(i){ensureAC();stopRef();const f=midiToFreq(st.notes[i],st.a4),t=ac.currentTime,g=ac.createGain(),o=ac.createOscillator(),o2=ac.createOscillator(),g2=ac.createGain(),lp=ac.createBiquadFilter();
+ o.type='sawtooth';o2.type='sine';o.frequency.value=f;o2.frequency.value=f;g2.gain.value=.6;lp.frequency.value=f*4;
+ o.connect(lp);lp.connect(g);o2.connect(g2);g2.connect(g);g.connect(ac.destination);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.18,t+.02);g.gain.exponentialRampToValueAtTime(.001,t+2.2);
+ o.start();o2.start();o.stop(t+2.3);o2.stop(t+2.3);tone={o,o2,i};const b=document.querySelector(`.str[data-i="${i}"]`);b&&b.classList.add('play');setTimeout(()=>{b&&b.classList.remove('play')},2200);}
+function stopRef(){if(tone){try{tone.o.stop();tone.o2.stop()}catch(e){}tone=null;document.querySelectorAll('.play').forEach(e=>e.classList.remove('play'))}}
+// string interactions: tap = select (switch to manual), long-press = tone
+let pt;$('strings').addEventListener('pointerdown',e=>{if(st.edit)return;const b=e.target.closest('.str');if(!b)return;const i=+b.dataset.i;pt=setTimeout(()=>{pt='lp';playRef(i)},450);});
+$('strings').addEventListener('pointerup',e=>{const b=e.target.closest('.str');if(!b)return;const i=+b.dataset.i;
+ if(st.edit){const a=e.target.closest('.ar');if(a)shift(i,+a.dataset.d);return;}
+ if(pt!=='lp'){clearTimeout(pt);st.sel=i;setMode('manual');}pt=null;});
+$('strings').addEventListener('pointerleave',()=>{if(pt&&pt!=='lp')clearTimeout(pt);pt=null});
+function setMode(m){st.mode=m;document.querySelectorAll('#mode button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));renderStrings();}
+$('mode').onclick=e=>{const m=e.target.dataset.m;if(m)setMode(m)};
+const sheet=on=>$('sh').classList.toggle('open',on);$('gear').onclick=()=>sheet(true);$('tchip').onclick=()=>sheet(true);$('shbg').onclick=()=>sheet(false);
+$('tun').onchange=$('tun2').onchange=e=>selectTuning(e.target.value);
+$('am').onclick=()=>{st.a4=Math.max(415,st.a4-1);renderStrings()};$('ap').onclick=()=>{st.a4=Math.min(466,st.a4+1);renderStrings()};
+$('ref').onclick=()=>playRef(st.mode==='manual'?st.sel:st.sel);
+function toast(s){const t=$('toast');t.textContent=s;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2200)}
+$('rm').onclick=()=>toast('Remove ads: in-app purchase coming in the mobile app');
+// audio input
+let an,buf,stream,smoothF=0;
+$('start').onclick=async()=>{if(st.run){stream.getTracks().forEach(t=>t.stop());st.run=false;$('start').textContent='Start tuning';$('start').classList.remove('on');$('meta').textContent='Paused';return;}
+ try{ensureAC();stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
+ const src=ac.createMediaStreamSource(stream);an=ac.createAnalyser();an.fftSize=4096;buf=new Float32Array(an.fftSize);src.connect(an);
+ st.run=true;$('start').textContent='Stop';$('start').classList.add('on');$('meta').textContent='Listening…';}
+ catch(e){toast('Microphone unavailable: '+(e.message||e.name));}};
+function frame(){requestAnimationFrame(frame);
+ if(st.run){an.getFloatTimeDomainData(buf);const r=yin(buf,ac.sampleRate);
+  if(r&&r.clarity>.85){smoothF=smoothF&&Math.abs(1200*Math.log2(r.freq/smoothF))<50?smoothF*.75+r.freq*.25:r.freq;st.lastHit=performance.now();update(smoothF);}
+  else if(performance.now()-st.lastHit>1200){smoothF=0;st.cents=0;$('status').textContent='';$('gw').classList.remove('in');document.querySelectorAll('.str.hit').forEach(e=>e.classList.remove('hit'));}}
+ st.shown+=(st.cents-st.shown)*.18;$('needle').style.transform=`rotate(${Math.max(-50,Math.min(50,st.shown))/50*80}deg)`;}
+function update(f){const t=st.notes;let target,idx=-1;
+ if(st.mode==='chrom'){const n=freqToNote(f,st.a4);target=n.midi;}
+ else if(st.mode==='manual'){idx=st.sel;target=t[idx];}
+ else{const m=69+12*Math.log2(f/st.a4);idx=0;t.forEach((x,i)=>{if(Math.abs(x-m)<Math.abs(t[idx]-m))idx=i});target=t[idx];}
+ const c=1200*Math.log2(f/midiToFreq(target,st.a4));st.cents=c;const inT=Math.abs(c)<=5;
+ $('note').innerHTML=`${nm(target)}<sub>${Math.floor(target/12)-1}</sub>`;
+ $('meta').textContent=`${f.toFixed(1)} Hz · ${c>0?'+':''}${c.toFixed(0)} cents`;
+ const s=$('status');s.textContent=inT?'IN TUNE':Math.abs(c)>50?(c<0?'Way too low — tighten':'Way too high — loosen'):(c<0?'Tune up ↑':'Tune down ↓');s.style.color=inT?'var(--ok)':Math.abs(c)<20?'var(--warn)':'var(--bad)';
+ $('gw').classList.toggle('in',inT);$('nglow').style.opacity=inT?1:0;$('halo').style.opacity=inT?1:0;
+ document.querySelectorAll('.str').forEach((b,i)=>b.classList.toggle('hit',i===idx&&inT));}
+frame();
+</script></body></html>
