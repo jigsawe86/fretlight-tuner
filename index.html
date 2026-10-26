@@ -125,6 +125,26 @@ svg.gauge{max-width:320px;margin:0 auto}
 @media (max-height:760px){.note{font-size:80px !important}}
 .clbl{padding:0 2px}
 .modal-bg{backdrop-filter:none;background:#000000c0}
+/* v6 vertical rhythm */
+.app{height:100dvh;min-height:600px}
+.hero{flex:1 1 0;justify-content:center;padding:8px 0 0}
+.controls{flex:1.05 1 0;display:flex;flex-direction:column;justify-content:center;gap:clamp(14px,2.8vh,26px);padding:0 0 clamp(12px,2.4vh,24px)}
+.controls>*{margin:0 !important}.controls .hint:empty,.controls .editbar:not(.show),.controls .capo:empty{display:none}
+.start{margin:0 !important}
+.str{height:clamp(60px,8.4vh,74px)}
+.editing .str{height:auto;padding:4px 0;gap:0}
+.editing .ar{display:block;font-size:14px;padding:6px 0;color:var(--acc)}
+.fine .ar{font-size:18px;font-weight:700;padding:3px 0}
+.tb.fine.on{background:#ffb54722;border-color:var(--warn);color:var(--warn);box-shadow:none}
+.cbar{margin-top:clamp(16px,3vh,30px)}
+@media (max-height:760px){.hero{padding-top:0}.note{font-size:84px !important}}
+.hero{flex:1 1 0;justify-content:center;padding-top:clamp(0px,2vh,20px)}
+.controls{flex:1.15 1 0;justify-content:space-evenly;gap:clamp(12px,2vh,20px);padding-top:clamp(6px,1.5vh,14px)}
+.str{height:clamp(64px,9vh,80px)}
+.tunebar .tb{height:44px}
+.pill select{height:44px}
+@media (max-width:380px){.tunebar{gap:7px}.tunebar .tb{padding:0 12px}.pill select{padding:0 28px 0 14px;font-size:13.5px}.pill:after{right:12px}}
+.hero{flex:.8 1 0;justify-content:flex-end;padding-bottom:clamp(8px,2vh,24px)}.controls{flex:1.3 1 0}
 </style></head><body>
 <div class="app" id="app">
 <header><div class="brand"><svg class="logo" viewBox="0 0 32 32"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7c8cff"/><stop offset="1" stop-color="#2ee59d"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="#151a28"/><path d="M7 21a9 9 0 0 1 18 0" fill="none" stroke="url(#lg)" stroke-width="2.6" stroke-linecap="round"/><path d="M16 22 20 12" stroke="#eef1f8" stroke-width="2.2" stroke-linecap="round"/><circle cx="16" cy="22" r="2.4" fill="#eef1f8"/></svg>Fretlight</div>
@@ -136,11 +156,10 @@ svg.gauge{max-width:320px;margin:0 auto}
 <div class="meta" style="text-align:center" id="meta">Tap Start and play a string</div>
 <div class="status" id="status"></div></section>
 <section class="controls">
-<div class="tunebar"><div class="pill"><select id="tun2" aria-label="Tuning preset"></select></div><button class="tb ic" id="find" aria-label="Find a song's tuning"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button><button class="tb" id="edit">Edit</button><button class="tb save" id="save" hidden>Save</button></div><div class="capo" id="capo"></div>
+<div class="tunebar"><div class="pill"><select id="tun2" aria-label="Tuning preset"></select></div><button class="tb ic" id="find" aria-label="Find a song's tuning"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button><button class="tb fine" id="finebtn" hidden>Fine ¢</button><button class="tb" id="edit">Edit</button><button class="tb save" id="save" hidden>Save</button></div><div class="capo" id="capo"></div>
 <div class="strings" id="strings" style="margin-top:12px"></div>
-<div class="hint" id="hint"></div><div class="editbar" id="ebar"><button class="tb" id="ren" hidden>Rename</button><button class="tb del" id="del" hidden>Delete</button></div></section>
-<div class="spacer"></div>
-<button class="start" id="start">Start tuning</button>
+<div class="hint" id="hint"></div><div class="editbar" id="ebar"><button class="tb" id="ren" hidden>Rename</button><button class="tb del" id="del" hidden>Delete</button></div><button class="start" id="start">Start tuning</button></section>
+
 <div class="ad"><div class="adbox">Banner ad placeholder · 320×50</div><button class="rm" id="rm">Remove ads<br><span style="color:var(--mut);font-weight:500">placeholder</span></button></div>
 </div>
 <div id="sh"><div class="sheet-bg" id="shbg"></div><div class="sheet"><div class="grab"></div>
@@ -210,17 +229,17 @@ st.notes=TUNINGS.Standard.slice();st.off=Z6();st.custom=null;st.dirty=false;st.e
 function nm(m){return NN[((m%12)+12)%12]}
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 function fillSelects(){const mine=Tunings.load();for(const sel of [$('tun'),$('tun2')]){
- let o=st.dirty?'<option value="__u">Custom (unsaved)</option>':'';
+ let o=st.dirty?'<option value="__u">Custom*</option>':'';
  o+='<optgroup label="Presets">'+Object.keys(TUNINGS).map(k=>`<option value="p:${esc(k)}">${esc(k)}</option>`).join('')+'</optgroup>';
  if(mine.length)o+='<optgroup label="My tunings">'+mine.map(t=>`<option value="c:${esc(t.name)}">${esc(t.name)}</option>`).join('')+'</optgroup>';
  sel.innerHTML=o;sel.value=st.dirty?'__u':(st.custom?'c:'+st.custom:'p:'+st.tun);}}
-function renderStrings(){const S=$('strings');S.classList.toggle('editing',st.edit);
- S.innerHTML=st.notes.map((m,i)=>`<div class="str${st.off[i]?' has-off':''}${st.mode==='manual'&&i===st.sel&&!st.edit?' sel':''}" data-i="${i}" role="button"><span class="ch">${nm(m)}</span><small>${6-i} · ${Math.floor(m/12)-1}</small>${st.off[i]?`<span class="off">${fmtC(st.off[i])}</span>`:''}</div>`).join('');
+function renderStrings(){const S=$('strings');S.classList.toggle('editing',st.edit);S.classList.toggle('fine',st.edit&&st.fine);$('finebtn').hidden=!st.edit;$('finebtn').classList.toggle('on',!!st.fine);
+ S.innerHTML=st.notes.map((m,i)=>`<div class="str${st.off[i]?' has-off':''}${st.mode==='manual'&&i===st.sel&&!st.edit?' sel':''}" data-i="${i}" role="button"><button class="ar" data-d="1" aria-label="Raise">${st.fine?"+":"▲"}</button><span class="ch">${nm(m)}</span><small>${6-i} · ${Math.floor(m/12)-1}</small>${st.off[i]?`<span class="off">${fmtC(st.off[i])}</span>`:''}<button class="ar" data-d="-1" aria-label="Lower">${st.fine?"−":"▼"}</button></div>`).join('');
  $('tchip').textContent=`A4 = ${st.a4} Hz`;$('av').textContent=st.a4+' Hz';S.style.opacity=st.mode==='chrom'&&!st.edit?.45:1;
  $('edit').textContent=st.edit?'Done':'Edit';$('find').hidden=st.edit;$('edit').classList.toggle('on',st.edit);
  $('save').hidden=!st.dirty;$('ren').hidden=$('del').hidden=!(st.edit&&st.custom&&!st.dirty);
  $('capo').textContent=st.capo?`Capo on fret ${st.capo}`:'';
- $('hint').textContent=st.edit?'Tap a string to adjust it by semitones or cents':'';$('ebar').classList.toggle('show',st.edit&&!!st.custom&&!st.dirty);fillSelects();}
+ $('hint').textContent=st.edit?(st.fine?'Fine mode: ± 1 cent per tap · tap a note for more':'▲ ▼ change a semitone · Fine ¢ for cents'):'';$('ebar').classList.toggle('show',st.edit&&!!st.custom&&!st.dirty);fillSelects();}
 function selectTuning(v){if(v==='__u')return;const k=v.slice(0,1),n=v.slice(2);
  if(k==='p'){if(!TUNINGS[n])return;st.tun=n;st.custom=null;st.notes=TUNINGS[n].slice();st.off=Z6();}else{const t=Tunings.find(n);if(!t)return;st.custom=n;st.notes=t.notes.slice();st.off=t.cents.slice();}
  st.dirty=false;st.capo=0;renderStrings();}
@@ -263,7 +282,7 @@ function stopRef(){if(tone){try{tone.o.stop();tone.o2.stop()}catch(e){}tone=null
 // string interactions: tap = select (switch to manual), long-press = tone
 let pt;$('strings').addEventListener('pointerdown',e=>{if(st.edit)return;const b=e.target.closest('.str');if(!b)return;const i=+b.dataset.i;pt=setTimeout(()=>{pt='lp';playRef(i)},450);});
 $('strings').addEventListener('pointerup',e=>{const b=e.target.closest('.str');if(!b)return;const i=+b.dataset.i;
- if(st.edit){openSS(i);return;}
+ if(st.edit){const a=e.target.closest('.ar');if(a)adj(i,st.fine?0:+a.dataset.d,st.fine?+a.dataset.d:0);else openSS(i);return;}
  if(pt!=='lp'){clearTimeout(pt);st.sel=i;setMode('manual');}pt=null;});
 $('strings').addEventListener('pointerleave',()=>{if(pt&&pt!=='lp')clearTimeout(pt);pt=null});
 function setMode(m){st.mode=m;document.querySelectorAll('#mode button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));renderStrings();}
@@ -314,5 +333,7 @@ for(const [id,d] of [['cu',1],['cd',-1]]){let t;const b=$(id);b.onpointerdown=()
 $('ssr').onclick=()=>{const b=base();st.notes[ssI]=b.notes[ssI];st.off[ssI]=b.cents[ssI];recomputeDirty();renderStrings();renderSS();};
 $('ssd').onclick=()=>$('ssbg').classList.remove('show');$('ssbg').onclick=e=>{if(e.target===$('ssbg'))$('ssbg').classList.remove('show');const j=e.target.closest('[data-j]');if(j){ssI=+j.dataset.j;renderSS();}};
 $('sspick').onclick=null;
+function adj(i,dm,dc){const m=st.notes[i]+dm;if(m<28||m>76)return;st.notes[i]=m;st.off[i]=Math.max(-50,Math.min(50,st.off[i]+dc));recomputeDirty();renderStrings();const b=document.querySelector(`.str[data-i="${i}"]`);b&&b.classList.add('bump');}
+$('finebtn').onclick=()=>{st.fine=!st.fine;renderStrings()};
 frame();
 </script></body></html>
